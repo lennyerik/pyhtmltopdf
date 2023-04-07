@@ -114,7 +114,7 @@ All `from_x` functions have the following parameters:
 * `footer_html`: An optional HTML string for the page header. Defaults to `""`
 * `render_options`: Can be any of [these](https://pyppeteer.github.io/pyppeteer/reference.html?highlight=pdf#pyppeteer.page.Page.pdf) PDF rendering options
 
-Additionally, the top-level `from_x` functions as well as the constructor of the `HTMLToPDFConverter` class take the `launch_options` argument which can be any of [these chromium launch options](https://pyppeteer.github.io/pyppeteer/reference.html?highlight=launch#pyppeteer.launcher.launch).
+Additionally, the top-level `from_x` functions as well as the constructors of the `HTMLToPDFConverter` and `AHTMLToPDFConverter` classes take the `launch_options` argument which can be any of [these chromium launch options](https://pyppeteer.github.io/pyppeteer/reference.html?highlight=launch#pyppeteer.launcher.launch).
 
 ## Development
 To format the code, install with dev dependencies and run
