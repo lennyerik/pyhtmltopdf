@@ -10,7 +10,7 @@ Or:
 
     git clone https://github.com/lennyerik/pyhtmltopdf.git
     cd pyhtmltopdf
-    pip install -e .
+    pip install -e ".[dev]"
 
 ## Usage
 Simple use-cases can use the `from_file`, `from_url` and `from_string` (or their async-enabled variants `afrom_file`, `afrom_url`, `afrom_string`) functions:
@@ -90,6 +90,20 @@ converter.from_url(
 )
 ```
 
+Or even asynchronously:
+
+```python
+from pyhtmltopdf import AHTMLToPDFConverter
+
+# With AHTMLToPDFConverter , we have to either await init and finish before
+# and after using the object or use an async with statement, like shown here
+async with AHTMLToPDFConverter() as converter:
+    await converter.from_url(
+        "https://example.com/",
+        "output.pdf",
+    )
+```
+
 ### API
 
 All `from_x` functions have the following parameters:
@@ -101,6 +115,19 @@ All `from_x` functions have the following parameters:
 * `render_options`: Can be any of [these](https://pyppeteer.github.io/pyppeteer/reference.html?highlight=pdf#pyppeteer.page.Page.pdf) PDF rendering options
 
 Additionally, the top-level `from_x` functions as well as the constructor of the `HTMLToPDFConverter` class take the `launch_options` argument which can be any of [these chromium launch options](https://pyppeteer.github.io/pyppeteer/reference.html?highlight=launch#pyppeteer.launcher.launch).
+
+## Development
+To format the code, install with dev dependencies and run
+
+    black *.py **/*.py
+
+To run the unit tests, install with dev dependencies and execute
+
+    python -m unittest test
+
+You can also set a specific browser:
+
+    CHROMIUM=/usr/bin/brave python -m unittest test
 
 ## Why not wkhtmltopdf?
 pyhtmltopdf uses an up-to-date version of Chromium, enabling use of features such as flexbox,

@@ -2,10 +2,16 @@
 name = "pyhtmltopdf"
 version = "0.0.1"
 authors = [
-    { name = "lennyerik" }
+    { name = "lennyerik" },
 ]
 description = "A simple python library for making PDF files from HTML using chromium"
 readme = "README.md"
 dependencies = [
-    "pyppeteer"
+    "pyppeteer",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "PyPDF2"
 ]
