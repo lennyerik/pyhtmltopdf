@@ -39,9 +39,13 @@ from pyhtmltopdf import from_url
 out_file = open("output.pdf", "wb")
 out_file.write(from_url(
     "https://example.com/",
+    header_html="<p style=\"font-size: 12pt;\">This is a demo header</p>",
+    footer_html="<p style=\"font-size: 12pt;\">Page No: <span class=\"pageNumber\"></span></p>",
     render_options={
-        "header_html": "<p>This is a demo header</p>",
-        "footer_html": "<p>Page No: <span class="pageNumber"></span></p>",
+        "margin": {
+            "top": "2cm",
+            "bottom": "2cm",
+        }
     },
 ))
 ```
