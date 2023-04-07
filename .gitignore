@@ -1,0 +1,4 @@
+**/__pycache__/
+venv/
+pyhtmltopdf.egg-info/
+build/
