@@ -5,7 +5,7 @@ from pyhtmltopdf import *
 
 
 class TestClassBased(unittest.TestCase):
-    async def test_from_file(self):
+    def test_from_file(self):
         with tempfile.NamedTemporaryFile(suffix=".html", delete=True) as f:
             f.write(TEST_HTML.encode())
             f.flush()
@@ -24,7 +24,7 @@ class TestClassBased(unittest.TestCase):
             )
             check_test_pdf(self, pdf)
 
-    async def test_from_url(self):
+    def test_from_url(self):
         converter = HTMLToPDFConverter(LAUNCH_OPTIONS)
         pdf = converter.from_url(
             "https://example.com",
@@ -42,7 +42,7 @@ class TestClassBased(unittest.TestCase):
         self.assertIn("Test Header", all_text)
         self.assertIn("Test Footer", all_text)
 
-    async def test_from_string(self):
+    def test_from_string(self):
         converter = HTMLToPDFConverter(LAUNCH_OPTIONS)
         pdf = converter.from_string(
             TEST_HTML,
@@ -57,7 +57,7 @@ class TestClassBased(unittest.TestCase):
         )
         check_test_pdf(self, pdf)
 
-    async def test_multiple(self):
+    def test_multiple(self):
         converter = HTMLToPDFConverter(LAUNCH_OPTIONS)
         first_pdf = converter.from_string(
             "<!DOCTYPE html><html><body><h1>First PDF</h1></body></html>",

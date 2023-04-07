@@ -13,6 +13,9 @@ class AHTMLToPDFConverter:
             **(
                 {
                     "headless": True,
+                    "handleSIGINT": False,
+                    "handleSIGTERM": False,
+                    "handleSIGHUP": False,
                 }
                 | self.launch_options
             )
