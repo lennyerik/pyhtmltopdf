@@ -119,7 +119,7 @@ Additionally, the top-level `from_x` functions as well as the constructors of th
 ## Development
 To format the code, install with dev dependencies and run
 
-    black *.py **/*.py
+    black .
 
 To run the unit tests, install with dev dependencies and execute
 
