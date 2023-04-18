@@ -16,6 +16,7 @@ class AHTMLToPDFConverter:
                     "handleSIGINT": False,
                     "handleSIGTERM": False,
                     "handleSIGHUP": False,
+                    "args": ["--no-sandbox"]
                 }
                 | self.launch_options
             )
