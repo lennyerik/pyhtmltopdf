@@ -14,7 +14,7 @@ TEST_HEADER = '<p style="font-size: 12pt;">Test Header</p>'
 TEST_FOOTER = '<p style="font-size: 12pt;">Test Footer</p>'
 
 LAUNCH_OPTIONS = {
-    "executablePath": environ.get("CHROMIUM"),
+    "executable_path": environ.get("CHROMIUM"),
 }
 
 

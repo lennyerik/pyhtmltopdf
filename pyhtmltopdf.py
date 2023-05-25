@@ -1,29 +1,40 @@
-import asyncio
 import tempfile
 from os.path import realpath
-from pyppeteer import launch
+from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
+import playwright
+
+DEFAULT_LAUNCH_OPTIONS = {
+    "headless": True,
+    "handle_sigint": False,
+    "handle_sigterm": False,
+    "handle_sighup": False,
+    "args": ["--no-sandbox"],
+}
 
 
 class AHTMLToPDFConverter:
     def __init__(self, launch_options={}):
-        self.launch_options = launch_options
+        self._launch_options = launch_options
+        self._browser = None
+        self._playwright = None
 
     async def init(self):
-        self._browser = await launch(
-            **(
-                {
-                    "headless": True,
-                    "handleSIGINT": False,
-                    "handleSIGTERM": False,
-                    "handleSIGHUP": False,
-                    "args": ["--no-sandbox"],
-                }
-                | self.launch_options
+        self._playwright = await async_playwright().start()
+
+        try:
+            self._browser = await self._playwright.chromium.launch(
+                **(DEFAULT_LAUNCH_OPTIONS | self._launch_options)
             )
-        )
+        except playwright._impl._api_types.Error as exc:
+            await self._playwright.stop()
+            raise RuntimeError(
+                "An exception occurred while trying to launch browser"
+            ) from exc
 
     async def finish(self):
         await self._browser.close()
+        await self._playwright.stop()
 
     async def __aenter__(self):
         await self.init()
@@ -36,9 +47,9 @@ class AHTMLToPDFConverter:
         self, page, output_path=None, header_html="", footer_html="", render_options={}
     ):
         render_options = {
-            "displayHeaderFooter": header_html != "" or footer_html != "",
-            "headerTemplate": header_html,
-            "footerTemplate": footer_html,
+            "display_header_footer": header_html != "" or footer_html != "",
+            "header_template": header_html,
+            "footer_template": footer_html,
             "format": "A4",
         } | render_options
         if output_path:
@@ -46,15 +57,15 @@ class AHTMLToPDFConverter:
         return await page.pdf(**render_options)
 
     async def from_file(self, file_path, *args, **kwargs):
-        page = await self._browser.newPage()
-        await page.goto("file://" + realpath(file_path), waitUntil="load")
+        page = await self._browser.new_page()
+        await page.goto("file://" + realpath(file_path), wait_until="load")
         pdf = await self._pdf_from_page(page, *args, **kwargs)
         await page.close()
         return pdf
 
     async def from_url(self, url, *args, **kwargs):
-        page = await self._browser.newPage()
-        await page.goto(url, waitUntil="load")
+        page = await self._browser.new_page()
+        await page.goto(url, wait_until="load")
         pdf = await self._pdf_from_page(page, *args, **kwargs)
         await page.close()
         return pdf
@@ -63,40 +74,72 @@ class AHTMLToPDFConverter:
         with tempfile.NamedTemporaryFile(suffix=".html", delete=True) as f:
             f.write(string.encode())
             f.flush()
-
-            page = await self._browser.newPage()
-            await page.goto("file://" + f.name, waitUntil="load")
-            pdf = await self._pdf_from_page(page, *args, **kwargs)
-            await page.close()
-            return pdf
+            return await self.from_file(f.name, *args, **kwargs)
 
 
 class HTMLToPDFConverter:
+    _browser = None
+
     def __init__(self, launch_options={}):
-        self._converter = AHTMLToPDFConverter(launch_options)
+        self._launch_options = launch_options
+        self._browser = None
+        self._playwright = None
+
+    def init(self):
+        self._playwright = sync_playwright().start()
         try:
-            asyncio.get_event_loop().run_until_complete(self._converter.init())
-        except RuntimeError:
-            asyncio.set_event_loop((loop := asyncio.new_event_loop()))
-            loop.run_until_complete(self._converter.init())
+            self._browser = self._playwright.chromium.launch(
+                **(DEFAULT_LAUNCH_OPTIONS) | self._launch_options
+            )
+        except playwright._impl._api_types.Error as exc:
+            self._playwright.stop()
+            raise RuntimeError(
+                "An exception occurred while trying to launch browser"
+            ) from exc
 
-    def __del__(self):
-        asyncio.get_event_loop().run_until_complete(self._converter.finish())
+    def finish(self):
+        self._browser.close()
+        self._playwright.stop()
 
-    def from_file(self, *args, **kwargs):
-        return asyncio.get_event_loop().run_until_complete(
-            self._converter.from_file(*args, **kwargs)
-        )
+    def __enter__(self):
+        self.init()
+        return self
 
-    def from_url(self, *args, **kwargs):
-        return asyncio.get_event_loop().run_until_complete(
-            self._converter.from_url(*args, **kwargs)
-        )
+    def __exit__(self, *args):
+        self.finish()
 
-    def from_string(self, *args, **kwargs):
-        return asyncio.get_event_loop().run_until_complete(
-            self._converter.from_string(*args, **kwargs)
-        )
+    def _pdf_from_page(
+        self, page, output_path=None, header_html="", footer_html="", render_options={}
+    ):
+        render_options = {
+            "display_header_footer": header_html != "" or footer_html != "",
+            "header_template": header_html,
+            "footer_template": footer_html,
+            "format": "A4",
+        } | render_options
+        if output_path:
+            render_options["path"] = output_path
+        return page.pdf(**render_options)
+
+    def from_file(self, file_path, *args, **kwargs):
+        page = self._browser.new_page()
+        page.goto("file://" + realpath(file_path), wait_until="load")
+        pdf = self._pdf_from_page(page, *args, **kwargs)
+        page.close()
+        return pdf
+
+    def from_url(self, url, *args, **kwargs):
+        page = self._browser.new_page()
+        page.goto(url, wait_until="load")
+        pdf = self._pdf_from_page(page, *args, **kwargs)
+        page.close()
+        return pdf
+
+    def from_string(self, string, *args, **kwargs):
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=True) as f:
+            f.write(string.encode())
+            f.flush()
+            return self.from_file(f.name, *args, **kwargs)
 
 
 async def afrom_file(
@@ -121,10 +164,10 @@ def from_file(
     launch_options={},
     render_options={},
 ):
-    converter = HTMLToPDFConverter(launch_options)
-    return converter.from_file(
-        file_path, output_path, header_html, footer_html, render_options
-    )
+    with HTMLToPDFConverter(launch_options) as converter:
+        return converter.from_file(
+            file_path, output_path, header_html, footer_html, render_options
+        )
 
 
 async def afrom_url(
@@ -149,10 +192,10 @@ def from_url(
     launch_options={},
     render_options={},
 ):
-    converter = HTMLToPDFConverter(launch_options)
-    return converter.from_url(
-        url, output_path, header_html, footer_html, render_options
-    )
+    with HTMLToPDFConverter(launch_options) as converter:
+        return converter.from_url(
+            url, output_path, header_html, footer_html, render_options
+        )
 
 
 async def afrom_string(
@@ -177,7 +220,7 @@ def from_string(
     launch_options={},
     render_options={},
 ):
-    converter = HTMLToPDFConverter(launch_options)
-    return converter.from_string(
-        string, output_path, header_html, footer_html, render_options
-    )
+    with HTMLToPDFConverter(launch_options) as converter:
+        return converter.from_string(
+            string, output_path, header_html, footer_html, render_options
+        )

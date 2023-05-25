@@ -1,12 +1,12 @@
 # pyhtmltopdf
 A tiny python PDF generation library which is intentionally **not** based on wkhtmltopdf.
-Rather, it uses Chromium with the [pyppeteer library](https://github.com/pyppeteer/pyppeteer) (a python implementation of [Google's Puppeteer](https://github.com/puppeteer/puppeteer)).
+Rather, it uses Chromium with the [playwright library](https://github.com/microsoft/playwright-python) (a python implementation of [Google's Puppeteer](https://github.com/puppeteer/puppeteer) protocol).
 
 ## Installation
 
     pip install git+https://github.com/lennyerik/pyhtmltopdf.git
 
-Or:
+Or, for development:
 
     git clone https://github.com/lennyerik/pyhtmltopdf.git
     cd pyhtmltopdf
@@ -50,7 +50,7 @@ out_file.write(from_url(
 ))
 ```
 
-If you already have a chromium browser installed, you can add `executablePath` to the `launchOptions` like so:
+If you already have a chromium browser installed, you can add `executable_path` to the `launch_options` like so:
 
 ```python
 from_file(
@@ -58,7 +58,7 @@ from_file(
     "output.pdf",
     launch_options={
         # This example uses Brave as the chromium-based browser
-        "executablePath": "/usr/bin/brave",
+        "executable_path": "/usr/bin/brave",
     }
     render_options={
         "margin": {
@@ -75,19 +75,24 @@ In case you want to process multiple PDFs, the class based API is faster, since 
 ```python
 from pyhtmltopdf import HTMLToPDFConverter
 
+with HTMLToPDFConverter() as converter:
+    converter.from_url(
+        "https://example.com/",
+        "output.pdf",
+    )
+
+# Or, alternatively
+
 converter = HTMLToPDFConverter(launch_options={
     # Launch options are passed in here
-
-    # In this example, we dump the stdout and stderr
-    # of the browser to our stdout and stderr, enabling
-    # us to see browser error messages
-    "dumpio": True
+    "executable_path": "/usr/bin/brave",
 })
-
+converter.init()
 converter.from_url(
     "https://example.com/",
     "output.pdf",
 )
+converter.finish()
 ```
 
 Or even asynchronously:
@@ -95,13 +100,25 @@ Or even asynchronously:
 ```python
 from pyhtmltopdf import AHTMLToPDFConverter
 
-# With AHTMLToPDFConverter , we have to either await init and finish before
-# and after using the object or use an async with statement, like shown here
 async with AHTMLToPDFConverter() as converter:
     await converter.from_url(
         "https://example.com/",
         "output.pdf",
     )
+
+
+# Or, alternatively
+
+converter = AHTMLToPDFConverter(launch_options={
+    # Launch options are passed in here
+    "executable_path": "/usr/bin/brave",
+})
+await converter.init()
+await converter.from_url(
+    "https://example.com/",
+    "output.pdf",
+)
+await converter.finish()
 ```
 
 ### API
@@ -112,9 +129,9 @@ All `from_x` functions have the following parameters:
 * `output_path`: An optional output path to save the PDF to. Defaults to `None`
 * `header_html`: An optional HTML string for the page header. Defaults to `""`
 * `footer_html`: An optional HTML string for the page header. Defaults to `""`
-* `render_options`: Can be any of [these](https://pyppeteer.github.io/pyppeteer/reference.html?highlight=pdf#pyppeteer.page.Page.pdf) PDF rendering options
+* `render_options`: Can be any of [these](https://playwright.dev/python/docs/api/class-page#page-pdf) PDF rendering options
 
-Additionally, the top-level `from_x` functions as well as the constructors of the `HTMLToPDFConverter` and `AHTMLToPDFConverter` classes take the `launch_options` argument which can be any of [these chromium launch options](https://pyppeteer.github.io/pyppeteer/reference.html?highlight=launch#pyppeteer.launcher.launch).
+Additionally, the top-level `from_x` functions as well as the constructors of the `HTMLToPDFConverter` and `AHTMLToPDFConverter` classes take the `launch_options` argument which can be any of [these launch options](https://playwright.dev/python/docs/api/class-browsertype#browser-type-launch).
 
 ## Development
 To format the code, install with dev dependencies and run
