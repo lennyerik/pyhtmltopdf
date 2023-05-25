@@ -14,5 +14,5 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "black",
-    "PyPDF2"
+    "pypdf"
 ]
